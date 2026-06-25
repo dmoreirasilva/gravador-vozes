@@ -3,111 +3,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gravação de Voz — Diego Moreira</title>
+  <title>Portal de Voz — Diego Moreira</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#09090f;--card:#10102a;--border:#1e1e3a;--text:#e2e8f0;--muted:#64748b;--accent:#7c3aed;--accent-dim:rgba(124,58,237,.12)}
-    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px}
-    .header{text-align:center;margin-bottom:28px;max-width:640px;width:100%}
-    .header h1{font-size:1.6rem;font-weight:800;letter-spacing:-.03em}
-    .header p{color:var(--muted);font-size:.9rem;margin-top:6px}
-    .stepper{display:flex;gap:8px;margin-bottom:26px;max-width:640px;width:100%}
-    .step-bar{flex:1;height:6px;border-radius:3px;background:var(--border);transition:background .35s}
-    .step-bar.active{background:var(--accent)}.step-bar.done{background:#22c55e}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:640px}
-    .tone-header{display:flex;align-items:center;gap:16px;margin-bottom:22px}
-    .tone-icon{width:54px;height:54px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;background:var(--accent-dim);border-radius:14px;flex-shrink:0}
-    .tone-title{font-size:1.3rem;font-weight:700}.tone-desc{font-size:.83rem;color:var(--muted);margin-top:3px;line-height:1.4}
-    .script-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px}
-    .script-box{background:#060610;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:16px 18px;font-size:.98rem;line-height:1.75;white-space:pre-line;margin-bottom:22px;max-height:200px;overflow-y:auto}
-    canvas{width:100%;height:64px;border-radius:8px;background:#060610;display:block;margin-bottom:14px}
-    .timer-row{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
-    .timer{font-size:2.6rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);letter-spacing:.04em;transition:color .3s}
-    .timer.ok{color:#22c55e}.timer.warn{color:#f59e0b}
+    :root{
+      --bg:#07070f;--card:#0f0f1e;--card2:#13132a;--border:#1e1e3a;
+      --text:#e2e8f0;--muted:#64748b;--muted2:#475569;
+      --accent:#7c3aed;--accent-dim:rgba(124,58,237,.13);
+      --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+    }
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px 80px}
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .header{text-align:center;margin-bottom:32px;max-width:640px;width:100%}
+    .logo{font-size:2.4rem;margin-bottom:12px}
+    .header h1{font-size:1.55rem;font-weight:800;letter-spacing:-.03em;line-height:1.2}
+    .header .sub{color:var(--muted);font-size:.88rem;margin-top:8px;line-height:1.5}
+    .cliente-badge{display:inline-block;background:var(--accent-dim);border:1px solid rgba(124,58,237,.3);color:#a78bfa;font-size:.8rem;font-weight:600;padding:4px 14px;border-radius:99px;margin-top:10px}
+
+    /* ── Stepper ────────────────────────────────────────────────────── */
+    .stepper{display:flex;gap:6px;margin-bottom:28px;max-width:640px;width:100%;align-items:center}
+    .step-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+    .step-bar{width:100%;height:5px;border-radius:3px;background:var(--border);transition:background .35s}
+    .step-bar.active{background:var(--accent)}.step-bar.done{background:var(--green)}
+    .step-lbl{font-size:.65rem;color:var(--muted2);font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:color .3s}
+    .step-lbl.active{color:#a78bfa}.step-lbl.done{color:var(--green)}
+
+    /* ── Card ───────────────────────────────────────────────────────── */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:640px}
+    .tone-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+    .tone-icon{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;background:var(--accent-dim);border-radius:15px;flex-shrink:0;transition:background .3s}
+    .tone-title{font-size:1.25rem;font-weight:700}
+    .tone-desc{font-size:.82rem;color:var(--muted);margin-top:4px;line-height:1.45}
+    .tone-num{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin-bottom:4px}
+
+    /* ── Script ─────────────────────────────────────────────────────── */
+    .script-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .script-label::after{content:'';flex:1;height:1px;background:var(--border)}
+    .script-box{background:#050510;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:16px 18px;font-size:.95rem;line-height:1.8;white-space:pre-line;margin-bottom:22px;max-height:180px;overflow-y:auto;transition:border-color .3s}
+    .script-box::-webkit-scrollbar{width:4px}
+    .script-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    /* ── Waveform ───────────────────────────────────────────────────── */
+    canvas{width:100%;height:60px;border-radius:10px;background:#050510;display:block;margin-bottom:12px;border:1px solid var(--border)}
+
+    /* ── Timer ──────────────────────────────────────────────────────── */
+    .timer-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+    .timer{font-size:2.4rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);letter-spacing:.04em;transition:color .3s}
+    .timer.ok{color:var(--green)}.timer.warn{color:var(--amber)}
     .timer-hint{font-size:.8rem;color:var(--muted)}
-    .status{text-align:center;font-size:.9rem;color:var(--muted);margin-bottom:16px;min-height:1.4em}
-    .status.ok{color:#22c55e}.status.error{color:#ef4444}
-    .btn{width:100%;padding:14px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;margin-bottom:10px}
-    .btn:last-child{margin-bottom:0}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.35;cursor:not-allowed}
+
+    /* ── Status ─────────────────────────────────────────────────────── */
+    .status{text-align:center;font-size:.88rem;color:var(--muted);margin-bottom:16px;min-height:1.3em;transition:color .2s}
+    .status.ok{color:var(--green)}.status.error{color:var(--red)}
+
+    /* ── Buttons ────────────────────────────────────────────────────── */
+    .btn{width:100%;padding:15px;border-radius:11px;border:none;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s,background .2s;margin-bottom:10px;letter-spacing:.01em}
+    .btn:last-child{margin-bottom:0}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
     .btn-record{background:var(--accent);color:#fff}
-    .btn-stop{background:#ef4444;color:#fff;display:none}
-    .btn-retry{background:var(--border);color:var(--text);display:none}
-    .btn-next{background:#22c55e;color:#fff;display:none}
-    @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,.7)}70%{box-shadow:0 0 0 12px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
-    .pulse{animation:pulse-red 1.4s infinite}
-    .done-card{text-align:center;padding:48px 24px;display:none}
-    .done-card .check{font-size:4rem;display:block;margin-bottom:20px}
-    .done-card h2{font-size:1.8rem;font-weight:800;margin-bottom:10px}
-    .done-card p{color:var(--muted);line-height:1.6;margin-bottom:28px}
-    .btn-download{display:block;width:100%;background:#22c55e;color:#fff;padding:16px;border-radius:10px;font-size:1.1rem;font-weight:700;text-align:center;cursor:pointer;border:none;margin-bottom:12px}
-    .btn-wpp{display:block;width:100%;background:#25D366;color:#fff;padding:16px;border-radius:10px;font-size:1.1rem;font-weight:700;text-align:center;text-decoration:none;margin-bottom:12px}
-    .instrucoes{background:#060610;border:1px solid var(--border);border-radius:12px;padding:16px;text-align:left;font-size:.85rem;line-height:1.7;color:var(--muted);margin-top:8px}
-    .instrucoes strong{color:var(--text)}
-    .script-box::-webkit-scrollbar{width:5px}
-    .script-box::-webkit-scrollbar-track{background:transparent}
-    .script-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .btn-record:hover:not(:disabled){opacity:.9}
+    .btn-stop{background:var(--red);color:#fff;display:none}
+    .btn-retry{background:var(--card2);color:var(--text);border:1px solid var(--border);display:none}
+    .btn-play{background:var(--card2);color:var(--text);border:1px solid var(--border);display:none}
+    .btn-next{background:var(--green);color:#fff;display:none}
+    @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,.7)}70%{box-shadow:0 0 0 14px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+    .pulse{animation:pulse-red 1.5s infinite}
+
+    /* ── Divider ────────────────────────────────────────────────────── */
+    .divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+
+    /* ── Done Card ──────────────────────────────────────────────────── */
+    .done-card{text-align:center;padding:40px 24px;display:none}
+    .done-icon{font-size:4rem;display:block;margin-bottom:20px}
+    .done-card h2{font-size:1.75rem;font-weight:800;margin-bottom:10px}
+    .done-card .done-sub{color:var(--muted);line-height:1.6;margin-bottom:32px;font-size:.92rem}
+    .done-summary{display:flex;gap:10px;margin-bottom:28px;justify-content:center}
+    .tone-badge{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:.78rem;color:var(--green);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px}
+    .tone-badge span{font-size:1.3rem}
+
+    .btn-download{display:block;width:100%;background:var(--green);color:#fff;padding:16px;border-radius:12px;font-size:1.05rem;font-weight:700;text-align:center;cursor:pointer;border:none;margin-bottom:12px;transition:opacity .2s}
+    .btn-download:hover{opacity:.9}.btn-download:disabled{opacity:.4}
+    .btn-wpp{display:block;width:100%;background:#25D366;color:#fff;padding:16px;border-radius:12px;font-size:1.05rem;font-weight:700;text-align:center;text-decoration:none;margin-bottom:20px;transition:opacity .2s}
+    .btn-wpp:hover{opacity:.9}
+    .instrucoes{background:#050510;border:1px solid var(--border);border-radius:13px;padding:18px;text-align:left;font-size:.83rem;line-height:1.75;color:var(--muted)}
+    .instrucoes strong{color:var(--text);display:block;margin-bottom:4px}
+    .instrucoes ol{padding-left:18px}
+    .instrucoes li{margin-bottom:4px}
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1 id="page-title">🎙️ Portal de Gravação de Voz</h1>
-  <p id="page-sub">Grave os 3 tons da sua voz para personalizar seus áudios</p>
+  <div class="logo">🎙️</div>
+  <h1 id="page-title">Portal de Gravação de Voz</h1>
+  <p class="sub" id="page-sub">Grave os 3 tons da sua voz para personalizar seus áudios com a clonagem do Diego.</p>
+  <div class="cliente-badge" id="cliente-badge">Carregando...</div>
 </div>
 
-<div class="stepper">
-  <div class="step-bar" id="bar-0"></div>
-  <div class="step-bar" id="bar-1"></div>
-  <div class="step-bar" id="bar-2"></div>
+<div class="stepper" id="stepper">
+  <div class="step-wrap">
+    <div class="step-bar" id="bar-0"></div>
+    <div class="step-lbl" id="lbl-0">Hipnose</div>
+  </div>
+  <div class="step-wrap">
+    <div class="step-bar" id="bar-1"></div>
+    <div class="step-lbl" id="lbl-1">Motivacional</div>
+  </div>
+  <div class="step-wrap">
+    <div class="step-bar" id="bar-2"></div>
+    <div class="step-lbl" id="lbl-2">Normal</div>
+  </div>
 </div>
 
+<!-- Gravação -->
 <div class="card" id="rec-card">
   <div class="tone-header">
     <div class="tone-icon" id="tone-icon"></div>
     <div>
+      <div class="tone-num" id="tone-num"></div>
       <div class="tone-title" id="tone-title"></div>
-      <div class="tone-desc"  id="tone-desc"></div>
+      <div class="tone-desc" id="tone-desc"></div>
     </div>
   </div>
-  <div class="script-label">Leia este roteiro em voz alta:</div>
+
+  <div class="script-label">Leia este roteiro em voz alta</div>
   <div class="script-box" id="script-box"></div>
-  <canvas id="waveform" width="600" height="64"></canvas>
+
+  <canvas id="waveform" width="600" height="60"></canvas>
+
   <div class="timer-row">
     <div class="timer" id="timer">0:00</div>
-    <div class="timer-hint" id="timer-hint">mínimo recomendado: 0:45</div>
+    <div class="timer-hint" id="timer-hint">mínimo: 0:30</div>
   </div>
-  <div class="status" id="status">Pronto para gravar</div>
-  <button class="btn btn-record" id="btn-record" onclick="startRec()">⏺&nbsp; Começar Gravação</button>
-  <button class="btn btn-stop pulse" id="btn-stop" onclick="stopRec()">⏹&nbsp; Parar e Salvar</button>
+
+  <div class="status" id="status">Toque em gravar quando estiver pronto</div>
+
+  <button class="btn btn-record" id="btn-record" onclick="startRec()">⏺&nbsp; Iniciar Gravação</button>
+  <button class="btn btn-stop pulse" id="btn-stop" onclick="stopRec()">⏹&nbsp; Parar Gravação</button>
+  <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶️&nbsp; Ouvir Gravação</button>
   <button class="btn btn-retry" id="btn-retry" onclick="retry()">↺&nbsp; Gravar de Novo</button>
-  <button class="btn btn-next"  id="btn-next"  onclick="next()"></button>
+  <button class="btn btn-next" id="btn-next" onclick="next()"></button>
 </div>
 
+<!-- Concluído -->
 <div class="card done-card" id="done-card">
-  <span class="check">🎉</span>
-  <h2>Gravação concluída!</h2>
-  <p>Os 3 tons foram gravados com sucesso.<br>Agora baixe o arquivo e envie para o Diego.</p>
-  <button class="btn-download" id="btn-zip" onclick="downloadZip()">⬇️ Baixar arquivos de voz</button>
-  <a class="btn-wpp" id="btn-wpp" href="#" target="_blank">💬 Enviar para Diego pelo WhatsApp</a>
+  <span class="done-icon">🎉</span>
+  <h2>Voz gravada!</h2>
+  <p class="done-sub">Os 3 tons foram gravados com sucesso.<br>Agora baixe o arquivo e envie para o Diego pelo WhatsApp.</p>
+
+  <div class="done-summary">
+    <div class="tone-badge"><span>🌙</span>Hipnose</div>
+    <div class="tone-badge"><span>🔥</span>Motivacional</div>
+    <div class="tone-badge"><span>🎙️</span>Normal</div>
+  </div>
+
+  <button class="btn-download" id="btn-zip" onclick="downloadZip()">⬇️ Baixar arquivo de voz (ZIP)</button>
+  <a class="btn-wpp" id="btn-wpp" href="#" target="_blank">💬 Abrir WhatsApp do Diego</a>
+
   <div class="instrucoes">
-    <strong>Como enviar:</strong><br>
-    1. Clique em "Baixar arquivos de voz" acima<br>
-    2. Abra o WhatsApp com Diego<br>
-    3. Anexe o arquivo baixado e envie
+    <strong>Como enviar para o Diego:</strong>
+    <ol>
+      <li>Clique em "Baixar arquivo de voz" acima</li>
+      <li>Abra o WhatsApp com o Diego</li>
+      <li>Toque no clipe 📎 e selecione o arquivo baixado</li>
+      <li>Envie — o Diego vai importar a sua voz e gerar o áudio</li>
+    </ol>
   </div>
 </div>
 
 <script>
-// ── Params da URL ─────────────────────────────────────────────────────────────
-const _p          = new URLSearchParams(window.location.search);
+// ── Config ────────────────────────────────────────────────────────────────────
+const _p           = new URLSearchParams(window.location.search);
 const CLIENTE_NOME = _p.get('nome') || 'Cliente';
-const CLIENTE_ID   = (_p.get('id') || 'cliente')
-  .replace(/[^a-z0-9-]/gi,'-').toLowerCase().slice(0,40) || 'cliente';
-const DIEGO_WPP   = '5532991769530';
+const CLIENTE_ID   = (_p.get('id') || 'cliente').replace(/[^a-z0-9-]/gi,'-').toLowerCase().slice(0,40) || 'cliente';
+const DIEGO_WPP    = '5532991769530';
 
 const TONS = [
   {
-    id:'hipnose', nome:'Hipnose', emoji:'🌙', cor:'#7c3aed', corDim:'rgba(124,58,237,.12)',
+    id:'hipnose', nome:'Hipnose', emoji:'🌙', cor:'#7c3aed', corDim:'rgba(124,58,237,.13)',
     desc:'Tom calmo, lento e profundo — como guiar alguém para dentro de si.',
     script:
 `Muito bem. Nesse momento, tudo o que você precisa é ouvir a minha voz.
@@ -118,10 +192,10 @@ Sente os ombros relaxando... a testa suavizando... os olhos pesados, fechando de
 
 A cada palavra que você ouve, vai entrando mais fundo nesse estado de tranquilidade. Nada te perturba. Tudo está bem. Você está exatamente onde deveria estar.
 
-Nesse momento, você se aprofunda ainda mais. Cinco... quatro... três... dois... um. Muito bem. Profundamente relaxado.`
+Nesse momento, você se aprofunda ainda mais. Cinco... quatro... três... dois... um. Muito bem. Profundamente relaxado. Exatamente assim.`
   },
   {
-    id:'motivacional', nome:'Motivacional', emoji:'🔥', cor:'#d97706', corDim:'rgba(217,119,6,.12)',
+    id:'motivacional', nome:'Motivacional', emoji:'🔥', cor:'#d97706', corDim:'rgba(217,119,6,.13)',
     desc:'Tom energético e poderoso — como falar para uma plateia que precisa acordar.',
     script:
 `Isso mesmo! Você está aqui porque escolheu estar aqui. E toda escolha tem um preço — e todo preço vale a pena quando você sabe o que está construindo.
@@ -133,7 +207,7 @@ Agora é hora de acordar. De se levantar. De olhar pra frente e dizer: hoje eu v
 Então respira fundo, levanta o peito, e vai! Porque hoje é o dia. Aqui é o lugar. E você é a pessoa certa. Vamos — vamos juntos!`
   },
   {
-    id:'normal', nome:'Normal', emoji:'🎙️', cor:'#0891b2', corDim:'rgba(8,145,178,.12)',
+    id:'normal', nome:'Normal', emoji:'🎙️', cor:'#0891b2', corDim:'rgba(8,145,178,.13)',
     desc:'Tom natural e conversacional — como falar diretamente com alguém.',
     script:
 `Olá! Que bom estar aqui com você hoje.
@@ -142,57 +216,73 @@ Vou compartilhar algumas palavras em tom natural, como se estivesse conversando 
 
 O que mais admiro nas pessoas é a capacidade de ouvir de verdade. Não só com os ouvidos — com os olhos, com o coração, com a presença inteira. Isso é raro, e é valioso.
 
-Obrigada por fazer parte disso. Foi um prazer estar aqui com você.`
+Obrigado por fazer parte disso. Foi um prazer estar aqui com você.`
   }
 ];
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 let step=0, state='idle', timerSecs=0, timerInt=null;
 let mediaRec=null, stream=null, audioCtx=null, analyser=null, rafId=null, chunks=[];
-const gravados = {}; // { hipnose: Blob, motivacional: Blob, normal: Blob }
+const gravados = {}; // { id: Blob }
+let audioPlayer = null;
+let playing = false;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init(){
-  document.getElementById('page-title').textContent = '🎙️ Gravação — ' + CLIENTE_NOME;
-  document.getElementById('page-sub').textContent =
-    'Grave os 3 tons da sua voz para personalizar seus áudios com o Diego.';
+  document.getElementById('cliente-badge').textContent = '👤 ' + CLIENTE_NOME;
   renderStep();
 }
 
 function renderStep(){
   const ton = TONS[step];
+
+  // Stepper
   for(let i=0;i<3;i++){
     const b=document.getElementById('bar-'+i);
+    const l=document.getElementById('lbl-'+i);
     b.className='step-bar'+(i<step?' done':i===step?' active':'');
+    l.className='step-lbl'+(i<step?' done':i===step?' active':'');
   }
+
+  // Tone
   document.getElementById('tone-icon').textContent  = ton.emoji;
+  document.getElementById('tone-num').textContent   = 'Tom '+(step+1)+' de 3';
   document.getElementById('tone-title').textContent = ton.nome;
   document.getElementById('tone-desc').textContent  = ton.desc;
   document.getElementById('script-box').textContent = ton.script;
-  document.documentElement.style.setProperty('--accent',ton.cor);
-  document.documentElement.style.setProperty('--accent-dim',ton.corDim);
-  document.getElementById('btn-next').textContent = step<2 ? 'Próximo Tom →' : '✅  Finalizar';
+  document.documentElement.style.setProperty('--accent', ton.cor);
+  document.documentElement.style.setProperty('--accent-dim', ton.corDim);
+  document.getElementById('tone-icon').style.background = ton.corDim;
+
+  document.getElementById('btn-next').textContent = step < 2 ? 'Próximo Tom →' : '✅  Concluir';
+
+  // Reset UI
   timerSecs=0; updateTimer(0);
-  setStatus('Pronto para gravar','');
-  show('btn-record'); hide('btn-stop'); hide('btn-retry'); hide('btn-next');
+  setStatus('Toque em gravar quando estiver pronto','');
+  show('btn-record');
+  hide('btn-stop'); hide('btn-retry'); hide('btn-next'); hide('btn-play');
   clearCanvas();
+  if(audioPlayer){ audioPlayer.pause(); audioPlayer=null; playing=false; }
 }
 
 // ── Gravação ──────────────────────────────────────────────────────────────────
 async function startRec(){
-  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false}); }
-  catch(e){ setStatus('Erro ao acessar microfone: '+e.message,'error'); return; }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+  } catch(e){
+    setStatus('Erro ao acessar microfone: '+e.message,'error'); return;
+  }
   audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  analyser=audioCtx.createAnalyser(); analyser.fftSize=256;
+  analyser=audioCtx.createAnalyser(); analyser.fftSize=512;
   audioCtx.createMediaStreamSource(stream).connect(analyser);
   chunks=[];
   const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':
              MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')?'audio/ogg;codecs=opus':'';
-  mediaRec=new MediaRecorder(stream,mime?{mimeType:mime}:{});
+  mediaRec=new MediaRecorder(stream, mime?{mimeType:mime}:{});
   mediaRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
   mediaRec.start(200);
   state='recording'; timerSecs=0;
-  timerInt=setInterval(()=>{timerSecs++;updateTimer(timerSecs);},1000);
+  timerInt=setInterval(()=>{ timerSecs++; updateTimer(timerSecs); }, 1000);
   drawWaveform();
   setStatus('Gravando... leia o roteiro em voz alta','');
   hide('btn-record'); show('btn-stop');
@@ -200,83 +290,87 @@ async function startRec(){
 
 function stopRec(){
   if(state!=='recording')return;
-  state='done';
+  state='processing';
   clearInterval(timerInt); stopWaveform();
+  hide('btn-stop');
+  setStatus('Processando…','');
   mediaRec.onstop=()=>{
     const blob=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'});
     stopMic();
     if(timerSecs<15){
       setStatus('Gravação muito curta ('+timerSecs+'s). Grave pelo menos 15 segundos.','error');
-      state='error'; hide('btn-stop'); show('btn-retry'); return;
+      state='error'; show('btn-retry'); return;
     }
     gravados[TONS[step].id]=blob;
-    setStatus('Tom "'+TONS[step].nome+'" gravado! ✓','ok');
-    hide('btn-stop'); hide('btn-retry'); show('btn-next');
+    // Prepara player
+    const url=URL.createObjectURL(blob);
+    audioPlayer=new Audio(url);
+    audioPlayer.onended=()=>{ playing=false; document.getElementById('btn-play').textContent='▶️  Ouvir Gravação'; };
+    state='done';
+    setStatus('Tom "'+TONS[step].nome+'" gravado com sucesso ✓','ok');
+    show('btn-play'); show('btn-retry'); show('btn-next');
   };
-  mediaRec.stop(); hide('btn-stop');
-  setStatus('Processando…','');
+  mediaRec.stop();
 }
 
 function retry(){
   state='idle'; timerSecs=0; updateTimer(0); clearCanvas();
+  if(audioPlayer){ audioPlayer.pause(); audioPlayer=null; playing=false; }
   setStatus('Pronto para gravar','');
-  hide('btn-stop'); hide('btn-retry'); hide('btn-next'); show('btn-record');
+  hide('btn-stop'); hide('btn-retry'); hide('btn-next'); hide('btn-play');
+  show('btn-record');
+}
+
+function togglePlay(){
+  if(!audioPlayer)return;
+  const btn=document.getElementById('btn-play');
+  if(playing){ audioPlayer.pause(); playing=false; btn.textContent='▶️  Ouvir Gravação'; }
+  else{ audioPlayer.currentTime=0; audioPlayer.play(); playing=true; btn.textContent='⏸  Pausar'; }
 }
 
 function next(){
+  if(audioPlayer){ audioPlayer.pause(); audioPlayer=null; playing=false; }
   if(step<2){ step++; state='idle'; renderStep(); }
   else{ finalizarGravacao(); }
 }
 
-// ── Finalizar e preparar ZIP ──────────────────────────────────────────────────
+// ── Finalizar ─────────────────────────────────────────────────────────────────
 function finalizarGravacao(){
   document.getElementById('rec-card').style.display='none';
   document.getElementById('done-card').style.display='block';
-  for(let i=0;i<3;i++) document.getElementById('bar-'+i).className='step-bar done';
-
-  // Link WhatsApp
-  const wppMsg = encodeURIComponent(
-    'Oi Diego! Aqui estão meus arquivos de voz gravados. ('+CLIENTE_NOME+')'
-  );
-  document.getElementById('btn-wpp').href = 'https://wa.me/'+DIEGO_WPP+'?text='+wppMsg;
+  for(let i=0;i<3;i++){
+    document.getElementById('bar-'+i).className='step-bar done';
+    document.getElementById('lbl-'+i).className='step-lbl done';
+  }
+  const msg=encodeURIComponent('Oi Diego! Meus arquivos de voz gravados. ('+CLIENTE_NOME+')');
+  document.getElementById('btn-wpp').href='https://wa.me/'+DIEGO_WPP+'?text='+msg;
 }
 
 async function downloadZip(){
-  const btn = document.getElementById('btn-zip');
-  btn.textContent = '⏳ Preparando...';
-  btn.disabled = true;
-
+  const btn=document.getElementById('btn-zip');
+  btn.textContent='⏳ Preparando ZIP...'; btn.disabled=true;
   try{
-    // Se JSZip estiver disponível, cria ZIP — senão, baixa arquivos separados
-    if(typeof JSZip !== 'undefined'){
-      const zip = new JSZip();
-      for(const [tom, blob] of Object.entries(gravados)){
-        const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
-        zip.file(CLIENTE_ID+'-'+tom+'.'+ext, blob);
-      }
-      const zipBlob = await zip.generateAsync({type:'blob'});
-      triggerDownload(zipBlob, CLIENTE_ID+'-voz.zip');
-    } else {
-      // Sem JSZip: baixa os 3 arquivos separados
-      for(const [tom, blob] of Object.entries(gravados)){
-        const ext = blob.type.includes('ogg')?'ogg':'webm';
-        triggerDownload(blob, CLIENTE_ID+'-'+tom+'.'+ext);
-        await new Promise(r=>setTimeout(r,500));
-      }
+    const zip=new JSZip();
+    for(const [tom,blob] of Object.entries(gravados)){
+      const ext=blob.type.includes('ogg')?'ogg':'webm';
+      zip.file(CLIENTE_ID+'-'+tom+'.'+ext, blob);
     }
-    btn.textContent = '✅ Baixado!';
+    const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+    triggerDownload(zipBlob, CLIENTE_ID+'-voz.zip');
+    btn.textContent='✅ ZIP baixado!';
   } catch(e){
-    btn.textContent = '⬇️ Baixar arquivos de voz';
-    btn.disabled = false;
+    btn.textContent='⬇️ Baixar arquivo de voz (ZIP)';
+    btn.disabled=false;
+    alert('Erro ao gerar ZIP: '+e.message);
   }
 }
 
-function triggerDownload(blob, filename){
-  const url = URL.createObjectURL(blob);
-  const a   = document.createElement('a');
-  a.href = url; a.download = filename;
+function triggerDownload(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
   document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1500);
 }
 
 // ── Waveform ──────────────────────────────────────────────────────────────────
@@ -286,14 +380,14 @@ function drawWaveform(){
   function frame(){
     rafId=requestAnimationFrame(frame);
     analyser.getByteTimeDomainData(buf);
-    ctx.clearRect(0,0,W,H); ctx.fillStyle='#060610'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#050510'; ctx.fillRect(0,0,W,H);
     ctx.lineWidth=2;
     ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
     ctx.beginPath();
     const sw=W/buf.length; let x=0;
     for(let i=0;i<buf.length;i++){
-      const y=(buf[i]/128)*(H/2);
-      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+      const v=buf[i]/128.0, y=(v*H)/2;
+      if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
       x+=sw;
     }
     ctx.lineTo(W,H/2); ctx.stroke();
@@ -303,7 +397,7 @@ function drawWaveform(){
 function stopWaveform(){ if(rafId){cancelAnimationFrame(rafId);rafId=null;} }
 function clearCanvas(){
   const c=document.getElementById('waveform'),ctx=c.getContext('2d');
-  ctx.fillStyle='#060610'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle='#050510'; ctx.fillRect(0,0,c.width,c.height);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -317,7 +411,7 @@ function updateTimer(s){
   el.textContent=Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');
   el.className='timer'+(s>=45?' ok':s>=15?' warn':'');
   document.getElementById('timer-hint').textContent=
-    s>=45?'ótimo! pode parar quando quiser':s>=15?'continue — ideal 0:45 ou mais':'mínimo recomendado: 0:45';
+    s>=45?'ótimo — pode parar':s>=15?'continue gravando — ideal 0:45+':'mínimo: 0:30';
 }
 function setStatus(msg,cls){
   const el=document.getElementById('status');
@@ -325,13 +419,6 @@ function setStatus(msg,cls){
 }
 function show(id){document.getElementById(id).style.display='block';}
 function hide(id){document.getElementById(id).style.display='none';}
-
-// ── JSZip (carrega dinamicamente) ─────────────────────────────────────────────
-(function(){
-  const s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-  document.head.appendChild(s);
-})();
 
 init();
 </script>
